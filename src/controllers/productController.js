@@ -4,73 +4,67 @@ function createEnvelope(success, data = null, error = null) {
   return { success, data, error };
 }
 
-export async function getProducts(req, res, next) {
-  try {
-    const filters = {
-      category: req.query.category,
-      status: req.query.status,
-      minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
-      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
-      search: req.query.search
-    };
+async function getProducts(req, res) {
+  const filters = {
+    category: req.query.category,
+    status: req.query.status,
+    minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+    maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
+    search: req.query.search,
+    inStock: req.query.inStock === 'true' ? true : req.query.inStock === 'false' ? false : undefined
+  };
 
-    const products = productModel.findAll(filters);
-    res.json(createEnvelope(true, products));
-  } catch (err) {
-    next(err);
-  }
+  const products = productModel.findAll(filters);
+  res.json(createEnvelope(true, products));
 }
 
-export async function getProductById(req, res, next) {
-  try {
-    const { id } = req.params;
-    const product = productModel.findById(id);
+async function getProductById(req, res) {
+  const { id } = req.params;
+  const product = productModel.findById(id);
 
-    if (!product) {
-      return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
-    }
-
-    res.json(createEnvelope(true, product));
-  } catch (err) {
-    next(err);
+  if (!product) {
+    return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
   }
+
+  res.json(createEnvelope(true, product));
 }
 
-export async function createProduct(req, res, next) {
-  try {
-    const product = productModel.create(req.body);
-    res.status(201).json(createEnvelope(true, product));
-  } catch (err) {
-    next(err);
-  }
+async function createProduct(req, res) {
+  const product = productModel.create(req.body);
+  res.status(201).json(createEnvelope(true, product));
 }
 
-export async function updateProduct(req, res, next) {
-  try {
-    const { id } = req.params;
-    const product = productModel.update(id, req.body);
+async function updateProduct(req, res) {
+  const { id } = req.params;
+  const product = productModel.update(id, req.body);
 
-    if (!product) {
-      return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
-    }
-
-    res.json(createEnvelope(true, product));
-  } catch (err) {
-    next(err);
+  if (!product) {
+    return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
   }
+
+  res.json(createEnvelope(true, product));
 }
 
-export async function deleteProduct(req, res, next) {
-  try {
-    const { id } = req.params;
-    const deleted = productModel.delete(id);
+async function deleteProduct(req, res) {
+  const { id } = req.params;
+  const deleted = productModel.delete(id);
 
-    if (!deleted) {
-      return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
-    }
-
-    res.json(createEnvelope(true, { message: 'Product deleted successfully' }));
-  } catch (err) {
-    next(err);
+  if (!deleted) {
+    return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
   }
+
+  res.json(createEnvelope(true, { message: 'Product archived successfully' }));
 }
+
+async function restoreProduct(req, res) {
+  const { id } = req.params;
+  const product = productModel.restore(id);
+
+  if (!product) {
+    return res.status(404).json(createEnvelope(false, null, { message: 'Product not found', code: 'NOT_FOUND' }));
+  }
+
+  res.json(createEnvelope(true, product));
+}
+
+export { getProducts, getProductById, createProduct, updateProduct, deleteProduct, restoreProduct };

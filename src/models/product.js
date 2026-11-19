@@ -58,7 +58,7 @@ function validateProduct(data, isUpdate = false) {
 }
 
 function findAll(filters = {}) {
-  let result = Array.from(products.values());
+  let result = Array.from(products.values()).filter(p => p.archivedAt === null);
 
   if (filters.category) {
     result = result.filter(p => p.category === filters.category);
@@ -85,16 +85,26 @@ function findAll(filters = {}) {
     );
   }
 
+  if (filters.inStock === true || filters.inStock === 'true') {
+    result = result.filter(p => p.stock > 0);
+  } else if (filters.inStock === false || filters.inStock === 'false') {
+    result = result.filter(p => p.stock === 0);
+  }
+
   return result;
 }
 
 function findById(id) {
-  return products.get(id) || null;
+  const product = products.get(id);
+  if (!product || product.archivedAt !== null) {
+    return null;
+  }
+  return product;
 }
 
 function findBySku(sku) {
   for (const product of products.values()) {
-    if (product.sku === sku) {
+    if (product.sku === sku && product.archivedAt === null) {
       return product;
     }
   }
@@ -125,7 +135,8 @@ function create(data) {
     price: Number(data.price.toFixed(2)),
     stock: data.stock || 0,
     status: data.status || 'active',
-    createdAt: new Date()
+    createdAt: new Date(),
+    archivedAt: null
   };
 
   products.set(product.id, product);
@@ -134,7 +145,7 @@ function create(data) {
 
 function update(id, patch) {
   const product = products.get(id);
-  if (!product) {
+  if (!product || product.archivedAt !== null) {
     return null;
   }
 
@@ -168,7 +179,23 @@ function update(id, patch) {
 }
 
 function deleteProduct(id) {
-  return products.delete(id);
+  const product = products.get(id);
+  if (!product || product.archivedAt !== null) {
+    return false;
+  }
+  product.archivedAt = new Date();
+  products.set(id, product);
+  return true;
+}
+
+function restore(id) {
+  const product = products.get(id);
+  if (!product || product.archivedAt === null) {
+    return null;
+  }
+  product.archivedAt = null;
+  products.set(id, product);
+  return product;
 }
 
 export const productModel = {
@@ -177,5 +204,6 @@ export const productModel = {
   findBySku,
   create,
   update,
-  delete: deleteProduct
+  delete: deleteProduct,
+  restore
 };
